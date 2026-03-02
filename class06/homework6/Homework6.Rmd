@@ -1,0 +1,76 @@
+---
+title: "Homework 6"
+author: "Yane Lee PID A17670350"
+date: "2026-01-26"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### **Directions for this assignment**: Write your own function starting from the code above that analyzes protein drug interactions by reading in any protein PDB data and outputs a plot for the specified protein.
+
+Below is the example code for the analysis of protein drug interaction
+
+```{r}
+library(bio3d)
+s1 <- read.pdb("4AKE") # kinase with drug
+s2 <- read.pdb("1AKE") # kinase no drug
+s3 <- read.pdb("1E4Y") # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+The code below was used to quantify the similarities of the proteins based on their B-factor trends. 
+
+```{r}
+hc <- hclust( dist( rbind(s1.b, s2.b, s3.b) ) )
+plot(hc)
+```
+
+The question in our homework assignments asks us to generalize the code above to work with any set of input
+protein structures
+
+We first have to recognize that we must manually name s1.b, s2.b, s3.b for this code to work. To make this work for any number of protein structures, without rewriting the code every time, we can put all the structures into a list and combine them through a function.
+
+```{r}
+structures <- list(s1.b, s2.b, s3.b)
+structures
+```
+Now that our structures are in a list, we can combine them into clusters through a function
+
+```{r}
+cluster_proteins <- function(structure_list) {
+
+  # Combine all structures into one matrix
+  combined <- do.call(rbind, structure_list)
+
+  # Compute distances and clustering
+  hc <- hclust(dist(combined))
+
+  # Plot the clustering result
+  plot(hc)
+}
+```
+
+To test this function we can use the example from above
+
+```{r}
+structures <- list(s1.b, s2.b, s3.b)
+cluster_proteins(structures)
+```
+
+Now we have a function that we can use for any number of structures!
+
+
+
+
+
+
+

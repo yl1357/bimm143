@@ -1,0 +1,162 @@
+---
+title: "Machine Learning 1"
+author: "Yane Lee PID A17670350"
+date: "2026-02-01"
+output: pdf_document
+---
+
+# First up kmeans()
+
+Demo of using kmeans() function in based R. First make up some data with a known structure.
+
+```{r}
+tmp <- c( rnorm(30, -3), rnorm(30, 3) )
+tmp
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+```
+
+Now we have some made up data in `x` let's see how kmeans works with this data
+
+```{r}
+k <- kmeans(x, centers = 2, nstart = 20)
+k
+```
+
+> Q. How many points are in each cluster?
+
+```{r}
+k$size
+```
+
+> Q. How do we get to the cluster membership/assignment.
+
+```{r}
+k$cluster
+```
+
+> Q. What about cluster centers?
+
+```{r}
+k$centers
+```
+
+Now we got to the main results. Let's use them to plot our data with the kmeans result
+
+```{r}
+plot (x, col=k$cluster)
+points(k$centers, col="blue", pch=15)
+```
+
+## Now for hclust()
+
+We will cluster the same data `x` with the `hclust()`. In this case `hclust()` requires a distance matrix as input.
+
+```{r}
+hc <- hclust( dist(x) ) 
+hc
+```
+
+Let's plot our hclust result
+
+```{r}
+plot(hc)
+```
+
+To get our cluster membership vector we need to "cut" the tree with the `cutree()`
+
+```{r}
+grps <- cutree(hc, h=8)
+grps
+```
+
+Now plot our data with the hclust() results.
+
+```{r}
+plot(x, col=grps)
+```
+
+# Principal Component Analysis (PCA)
+
+## PCA of UK food data
+
+Read data from website and try a few visualizations.
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url, row.names=1)
+x
+```
+
+```{r}
+cols <- rainbow(nrow(x))
+barplot( as.matrix(x), col=cols )
+```
+
+```{r}
+barplot( as.matrix(x), col=cols, beside = TRUE )
+```
+
+```{r}
+pairs(x, col=cols)
+```
+
+PCA to the rescue!!
+The main base R PCA function is called `prcomp()` and we will ened to give it the transpose of our input data!
+
+```{r}
+t(x)
+pca <- prcomp( t(x) )
+```
+
+```{r}
+summary(pca)
+```
+
+
+```{r}
+attributes(pca)
+```
+
+To make our new PCA plot (a.k.a. PCA score plot) we access `pca$x`
+
+```{r}
+plot(pca$x[,1], pca$x[,2])
+text(pca$x[,1], pca$x[,2], colnames(x))
+```
+
+Color up the plot
+
+```{r}
+country_cols <- c("orange", "red", "blue", "green")
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+text(pca$x[,1], pca$x[,2], colnames(x), col=country_cols)
+```
+
+
+## PCA of RNA-Seq data
+
+Read in data from website
+
+```{r}
+url2 <- "https://tinyurl.com/expression-CSV"
+rna.data <- read.csv(url2, row.names=1)
+head(rna.data)
+```
+
+```{r}
+pca <- prcomp( t(rna.data) )
+summary(pca)
+```
+
+Do our PCA plot of this RNA-Seq data
+
+```{r}
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+```
+
+```{r}
+gene_cols <- c("lightpink", "skyblue", "yellow", "purple", "red", "blue", "orange", "lightgreen", "lavender")
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2")
+text(pca$x[,1], pca$x[,2], colnames(rna.data), col=gene_cols)
+```
