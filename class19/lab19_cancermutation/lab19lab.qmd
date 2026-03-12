@@ -1,0 +1,37 @@
+---
+title: "Class 19: Cancer Mutation"
+author: "Yane Lee PID A17670350"
+format: html
+editor: visual
+---
+
+I downloaded my sequence form the class website and moved it tto my working directory:
+
+From a **BLASTp** search against human refseq I see that it is:
+
+-Official Symbol: TP53
+-Official Full Name: tumor protein 53
+
+```{r}
+library(bio3d)
+
+a <- read.fasta("A17670350_mutant_seq.fa")
+read.fasta("A17670350_mutant_seq.fa")
+```
+
+
+We could score residue conservation
+
+```{r}
+mutation.sites <- which(conserv(a) < 1)
+```
+
+```{r}
+paste(a$ali[1, mutation.sites],
+mutation.sites,
+a$ali[2, mutation.sites])
+```
+
+
+
+

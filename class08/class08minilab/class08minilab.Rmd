@@ -1,0 +1,243 @@
+---
+title: "ML Mini Project"
+author: "Yane Lee PID A17670350"
+date: "2026-02-01"
+output: pdf_document
+---
+
+## Predicting Malignancy of New Samples
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_W26/class-material/WisconsinCancer.csv"
+wisc.df <- read.csv(url)
+```
+
+```{r}
+wisc.df <- read.csv(url, row.names=1)
+head(wisc.df)
+# You can use head() to analyze specific rows of data too
+head(wisc.df, 4)
+```
+
+We don't want to include the first column in our analysis
+
+```{r}
+new.wisc.df <- wisc.df[,-1]
+```
+
+We will create a diagnosis vector to store the data from the diagnosis column of the original dataset. We will use this later for plotting.
+
+```{r}
+diagnosis <- wisc.df$diagnosis
+```
+
+> Q1. How many observations are in this dataset?
+
+```{r}
+nrow(wisc.df)
+```
+
+
+> Q2. How many of the observations have a malignant diagnosis?
+
+```{r}
+table(wisc.df$diagnosis)
+```
+
+> Q3. How many variables/features in the data are suffixed with `_mean`?
+
+```{r}
+grep("_mean$", colnames(wisc.df), value = TRUE)
+```
+
+We will check column means and standard deviations
+
+```{r}
+colMeans(new.wisc.df)
+apply(new.wisc.df, 2, sd)
+```
+
+Time for PCA!
+
+```{r}
+wisc.pr <- prcomp(new.wisc.df)
+summary(wisc.pr)
+```
+
+> Q4. From your results, what proportion of the original variance is captured by the first principal component (PC1)?
+
+*0.982*
+
+> Q5. How many principal components (PCs) are required to describe at least 70% of the original variance in the data?
+
+*1*
+
+> Q6. How many principal components (PCs) are required to describe at least 90% of the original variance in the data?
+
+*1*
+
+Let's plot this data
+
+```{r}
+biplot(wisc.pr)
+```
+
+> Q7. What stands out to you about this plot? Is it easy or difficult to understand? Why?
+
+*It is difficult to understand because there is so much data on one plot. The datapoints are overlapping. What stands out to me the most is the different colors: red, and black*
+
+The trends are harder to see with this plot, so we'll use a more standard scatter plot to obseve and analyze
+
+```{r}
+# install.packages("ggplot2")
+library(ggplot2)
+
+ggplot(wisc.pr$x) + aes(PC1, PC2, col = diagnosis) + geom_point() + labs(x="PC1", y="PC2")
+```
+> Q8. Generate a similar plot for principal components 1 and 3. What do you notice about these plots?
+
+```{r}
+ggplot(wisc.pr$x) + aes(PC1, PC3, col = diagnosis) + geom_point() + labs(x="PC1", y="PC3")
+```
+
+*The plots indicate that there is separation between the malignant and benign samples. The plot comparing components 1 and 3, however, is higher up on the graph than the plot comparing components 1 and 2.*
+
+Calculating variance...
+
+```{r}
+pr.var <- wisc.pr$sdev^2
+head(pr.var)
+```
+
+```{r}
+pve <- wisc.pr$sdev^2 / sum(wisc.pr$sdev^2)
+
+plot(c(1,pve), xlab = "Principal Component", 
+     ylab = "Proportion of Variance Explained", 
+     ylim = c(0, 1), type = "o")
+```
+
+Alternatively, you can use a barplot
+
+```{r}
+barplot(pve, ylab = "Percent of Variance Explained",
+     names.arg=paste0("PC",1:length(pve)), las=2, axes = FALSE)
+axis(2, at=pve, labels=round(pve,2)*100 )
+```
+
+> Q9. For the first principal component, what is the component of the loading vector (i.e. wisc.pr$rotation[,1]) for the feature concave.points_mean? This tells us how much this original feature contributes to the first PC. Are there any features with larger contributions than this one?
+
+```{r}
+wisc.pr$rotation["concave.points_mean",1]
+```
+
+```{r}
+sort(abs(wisc.pr$rotation[,1]), decreasing = TRUE)
+```
+
+# Next we're going into hierarchical clustering
+
+```{r}
+# Scale the wisc.data data using the scale() function
+data.scaled <- scale(new.wisc.df)
+
+# Calculate the Euclidean distances between all pairs of observations in new scaled dataset
+data.dist <- dist(data.scaled)
+
+# Create hierarchical clustering model
+wisc.hclust <- hclust(data.dist, method = "complete")
+```
+
+> Q10. Using the plot() and abline() functions, what is the height at which the clustering model has 4 clusters?
+
+```{r}
+plot(wisc.hclust)
+abline(wisc.hclust, col="red", lty=2)
+```
+
+*There are 4 clusters when the height is approximately 19*
+
+We're going to cut the tree so that it has 4 clusters
+
+```{r}
+wisc.hclust.clusters <- cutree(wisc.hclust, h=19)
+table(wisc.hclust.clusters, diagnosis)
+```
+
+> Q12. Which method gives your favorite results for the same data.dist dataset? Explain your reasoning.
+
+```{r}
+wisc.pr.hclust <- hclust(data.dist, method = "ward.D2")
+plot(wisc.pr.hclust)
+```
+
+```{r}
+wisc.hclust.clust <- cutree(wisc.pr.hclust, h=32)
+table(wisc.hclust.clust, diagnosis)
+```
+
+Let's find out if our two main clusters are malignant and benign
+
+```{r}
+grps <- cutree(wisc.pr.hclust, k=2)
+table(grps)
+```
+
+```{r}
+table(grps, diagnosis)
+```
+
+```{r}
+ggplot(wisc.pr$x) +
+  aes(PC1, PC2) +
+  geom_point(col=grps)
+```
+
+```{r}
+# We're going to cut the tree so theres 2 clusters
+wisc.pr.hclust.clusters <- cutree(wisc.pr.hclust, k=2)
+```
+
+> Q13. How well does the newly created hclust model with two clusters separate out the two “M” and “B” diagnoses?
+
+```{r}
+table(wisc.pr.hclust.clusters, diagnosis)
+```
+
+> Q14. How well do the hierarchical clustering models you created in the previous sections (i.e. without first doing PCA) do in terms of separating the diagnoses? Again, use the table() function to compare the output of each model (wisc.hclust.clusters and wisc.pr.hclust.clusters) with the vector containing the actual diagnoses.
+
+```{r}
+table(wisc.hclust.clusters, diagnosis)
+```
+
+# We're now going to try to predict with new data
+
+```{r}
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+npc
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col=grps)
+points(npc[,1], npc[,2], col="blue", pch=16, cex=3)
+text(npc[,1], npc[,2], c(1,2), col="white")
+```
+
+> Q16. Which of these new patients should we prioritize for follow up based on your results?
+
+*Patient 2 should be prioritized because their PCA position is closer to the malignant clusters, indicating greater similarity to known malignant cases*
+
+
+
+
+
+
+
+
+
+
+
+
+

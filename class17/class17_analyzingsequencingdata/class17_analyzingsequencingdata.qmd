@@ -1,0 +1,131 @@
+---
+title: "Class 17: Analyzing Sequencing Data"
+author: "Yane Lee PID A17670350"
+format: pdf
+editor: visual
+---
+
+## Downstream Analysis
+
+With each sample having its own directory containing the Kallisto output, we can import the transcript count estimates into R using:
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("rhdf5")
+```
+
+```{r}
+library(tximport)
+
+folders <- dir(pattern="SRR21568*")
+samples <- sub("_quant","",folders)
+files <- file.path(folders, "abundance.h5")
+names(files) <- samples
+
+txi.kallisto <- tximport(files, type="kallisto", txOut=TRUE)
+```
+
+```{r}
+head(txi.kallisto$counts)
+```
+
+We now have our estimated transcript counts for each sample in R. We can see how many transcripts we have for each sample:
+
+```{r}
+colSums(txi.kallisto$counts)
+```
+
+And how many transcripts are detected in at least one sample:
+
+```{r}
+sum(rowSums(txi.kallisto$counts)>0)
+```
+
+We want to filter out the annotated transcripts with no reads
+
+```{r}
+to.keep <- rowSums(txi.kallisto$counts) > 0
+kset.nonzero <- txi.kallisto$counts[to.keep,]
+```
+
+```{r}
+keep2 <- apply(kset.nonzero,1,sd)>0
+x <- kset.nonzero[keep2,]
+```
+
+## Principal Component Analysis
+
+We can now apply any exploratory analysis technique to this counts matrix. As an example, we will perform a PCA of the transcriptomic profiles of these samples.
+
+```{r}
+pca <- prcomp(t(x), scale=TRUE)
+```
+
+```{r}
+summary(pca)
+```
+
+Now we can use the first two principal components as a co-ordinate system for visualizing the summarized transcriptomic profiles of each sample:
+
+```{r}
+plot(pca$x[,1], pca$x[,2],
+     col=c("blue","blue","red","red"),
+     xlab="PC1", ylab="PC2", pch=16)
+```
+
+> Q. Q. Use ggplot to make a similar figure of PC1 vs PC2 and a separate figure PC1 vs PC3 and PC2 vs PC3.
+
+```{r}
+plot(pca$x[,1], pca$x[,3],
+     col=c("blue","blue","red","red"),
+     xlab="PC1", ylab="PC3", pch=16)
+```
+
+```{r}
+plot(pca$x[,2], pca$x[,3],
+     col=c("blue","blue","red","red"),
+     xlab="PC2", ylab="PC3", pch=16)
+```
+
+Plot with labels for the two control samples (SRR2156848 and SRR2156849) and the two enhancer-targeting CRISPR-Cas9 samples (SRR2156850 and SRR2156851).
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+mycols <- c("blue","blue","red","red")
+
+ggplot(pca$x) +
+  aes(PC1, PC2, label=rownames(pca$x)) +
+  geom_point( col=mycols ) +
+  geom_text_repel( col=mycols ) +
+  theme_bw()
+```
+
+## Differential-expression analysis
+
+We can use DESeq2 to complete the differential-expression analysis that we are already familiar with:
+
+```{r}
+library(DESeq2)
+
+sampleTable <- data.frame(condition = factor(rep(c("control", "treatment"), each = 2)))
+rownames(sampleTable) <- colnames(txi.kallisto$counts)
+```
+
+```{r}
+dds <- DESeqDataSetFromTximport(txi.kallisto,
+                                sampleTable, 
+                                ~condition)
+```
+
+```{r}
+dds <- DESeq(dds)
+```
+
+```{r}
+res <- results(dds)
+head(res)
+```
