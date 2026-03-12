@@ -5,7 +5,7 @@ My classwork from [BIMM143](https://bioboot.github.io/bimm143_W26/) at UC San Di
 
 *Introductory material*
 
-- Class 04 [Intro to R](class04/class04.md)
+- Class 04 [Intro to R](class04/class04lab.md)
 
 - Class 05 [Data vis with ggplot](class05/class05lab.md)
 
@@ -21,18 +21,18 @@ My classwork from [BIMM143](https://bioboot.github.io/bimm143_W26/) at UC San Di
 
 - Class 11 [AlphaFold](class11/class11_alphafold/class11_alphafold.md)
 
-- Class 12
+- Class 12 [Genome Informatics](class12/class12lab/class12lab.md)
  
-- Class 13
+- Class 13 [DESeq Analysis](class13/class13lab/class13lab.md)
 
-- Class 14
+- Class 14 [RNA Seq](class14/class14_RNAseq/RNASeqAnalysisMiniLab.md)
 
-- Class 15
+- Class 15 [Github Repo]
 
-- Class 16
+- Class 16 [UNIX](class16/unix_notes.md)
 
-- Class 17
+- Class 17 [Analyzing Sequencing Data](class17/class17_analyzingsequencingdata/class17_analyzingsequencingdata.md)
 
-- Class 18
+- Class 18 [Pertussis](class18/class18_Pertussis/class18_pertussisminilab.md)
 
-- Class 19
+- Class 19 [Cancer Mutations](class19/lab19_cancermutation/lab19lab.md)
